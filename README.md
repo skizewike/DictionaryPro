@@ -1,2 +1,0 @@
-# DictionaryPro
-DictionaryPro_app
