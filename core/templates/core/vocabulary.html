@@ -1,0 +1,143 @@
+<!-- core/templates/core/vocabulary.html (ОБНОВЛЕН) -->
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="vocabulary-container">
+    <h1>📖 Словарь</h1>
+    
+    <div class="filters">
+        <form method="get" class="filters-form">
+            <select name="lang" onchange="this.form.submit()">
+                <option value="">Все языки</option>
+                {% for lang in languages %}
+                <option value="{{ lang.id }}" {% if selected_lang == lang.id|stringformat:"s" %}selected{% endif %}>
+                    {{ lang.name }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select name="cat" onchange="this.form.submit()">
+                <option value="">Все категории</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_cat == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select name="lesson" onchange="this.form.submit()">
+                <option value="">Все уроки</option>
+                {% for lesson in lessons %}
+                <option value="{{ lesson.id }}" {% if selected_lesson == lesson.id|stringformat:"s" %}selected{% endif %}>
+                    {{ lesson.name }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select name="level" onchange="this.form.submit()">
+                <option value="">Все уровни</option>
+                <option value="new" {% if selected_level == "new" %}selected{% endif %}>🆕 Новые (не изучались)</option>
+                <option value="learning" {% if selected_level == "learning" %}selected{% endif %}>📚 В процессе</option>
+                <option value="mastered" {% if selected_level == "mastered" %}selected{% endif %}>🏆 Усвоено</option>
+                <option value="due" {% if selected_level == "due" %}selected{% endif %}>⏰ К повторению</option>
+            </select>
+            
+            <button type="submit" class="btn btn-primary">Показать</button>
+        </form>
+    </div>
+    
+    <div class="words-table-container">
+        <table class="words-table">
+            <thead>
+                <tr>
+                    <th>Слово</th>
+                    <th>Перевод</th>
+                    <th>Язык</th>
+                    <th>Урок</th>
+                    <th>Категории</th>
+                    <th>Стадия</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in words %}
+                <tr>
+                    <td><strong>{{ item.word.term }}</strong></td>
+                    <td>{{ item.word.translation }}</td>
+                    <td>{{ item.word.language.name }}</td>
+                    <td>{% if item.word.lesson %}{{ item.word.lesson.name }}{% else %}—{% endif %}</td>
+                    <td>
+                        {% for cat in item.word.categories.all %}
+                        <span class="badge">{{ cat.name }}</span>
+                        {% empty %}
+                        —
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <span class="stage-badge stage-{{ item.progress.review_stage|default:0 }}">
+                            {{ item.stage_name }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.progress.mastered %}
+                        <span class="status-mastered">✅ Изучено</span>
+                        {% elif item.needs_review %}
+                        <span class="status-review">🔄 Требует повторения</span>
+                        {% elif item.progress %}
+                        <span class="status-learning">📖 В процессе</span>
+                        {% else %}
+                        <span class="status-new">🆕 Новое</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="no-data">📭 Слова не найдены. Попробуйте изменить фильтры.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.vocabulary-container { max-width: 1400px; margin: 0 auto; }
+.vocabulary-container h1 { margin-bottom: 25px; color: #1e293b; }
+
+.filters { background: white; padding: 20px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.filters-form { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+.filters-form select { padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; min-width: 150px; background: white; cursor: pointer; transition: border-color 0.2s; }
+.filters-form select:focus { border-color: #4f46e5; }
+.filters-form .btn-primary { padding: 12px 24px; border: none; cursor: pointer; }
+
+.words-table-container { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto; }
+.words-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.words-table th { background: #f8fafc; padding: 15px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+.words-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; }
+.words-table tr:last-child td { border-bottom: none; }
+.words-table tr:hover { background: #f8fafc; }
+
+.badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; margin: 2px; background: #e0e7ff; color: #4f46e5; }
+
+.stage-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 500; }
+.stage-0 { background: #fee2e2; color: #991b1b; }
+.stage-1 { background: #fef3c7; color: #92400e; }
+.stage-2 { background: #dbeafe; color: #1e40af; }
+.stage-3 { background: #d1fae5; color: #065f46; }
+.stage-4 { background: #a7f3d0; color: #047857; }
+.stage-5 { background: #6ee7b7; color: #064e3b; }
+
+.status-mastered { color: #10b981; font-weight: 500; }
+.status-review { color: #f59e0b; font-weight: 500; }
+.status-learning { color: #3b82f6; font-weight: 500; }
+.status-new { color: #ef4444; font-weight: 500; }
+
+.no-data { text-align: center; color: #94a3b8; padding: 40px !important; }
+
+@media (max-width: 768px) {
+    .filters-form { flex-direction: column; }
+    .filters-form select, .filters-form .btn-primary { width: 100%; }
+    .words-table th, .words-table td { padding: 10px; font-size: 0.9em; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,93 @@
+<!-- core/templates/core/base.html (ОБНОВЛЕН) -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DictionaryPro{% endblock %}</title>
+    {% load static %}
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        .navbar { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 15px 0; position: sticky; top: 0; z-index: 100; }
+        .nav-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .logo { font-size: 1.3em; font-weight: bold; color: #4f46e5; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-menu { display: flex; gap: 25px; list-style: none; flex-wrap: wrap; }
+        .nav-menu a { color: #64748b; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .nav-menu a:hover { color: #4f46e5; }
+        .nav-menu a.active { color: #4f46e5; border-bottom: 2px solid #4f46e5; padding-bottom: 4px; }
+        .nav-menu .logout { color: #ef4444; }
+        .nav-menu .logout:hover { color: #dc2626; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; min-height: 70vh; }
+        .btn { display: inline-block; padding: 10px 20px; border: none; border-radius: 8px; font-size: 1em; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .btn-secondary { background: #e2e8f0; color: #475569; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .messages { position: fixed; top: 80px; right: 20px; z-index: 1000; }
+        .message { background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px; animation: slideIn 0.3s ease; }
+        .message.error { border-left: 4px solid #ef4444; color: #991b1b; }
+        .message.success { border-left: 4px solid #10b981; color: #065f46; }
+        .message.warning { border-left: 4px solid #f59e0b; color: #92400e; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        footer { background: white; border-top: 1px solid #e2e8f0; padding: 20px 0; margin-top: 50px; text-align: center; color: #64748b; font-size: 0.9em; }
+        
+        @media (max-width: 768px) {
+            .nav-container { flex-direction: column; text-align: center; }
+            .nav-menu { justify-content: center; gap: 15px; }
+            .container { padding: 20px 15px; }
+            .messages { top: 100px; right: 10px; left: 10px; }
+            .message { font-size: 0.9em; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{% url 'dashboard' %}" class="logo">📖 DictionaryPro</a>
+            {% if user.is_authenticated %}
+            <ul class="nav-menu">
+                <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Дашборд</a></li>
+                <li><a href="{% url 'study' %}" {% if request.resolver_match.url_name == 'study' %}class="active"{% endif %}>Изучение</a></li>
+                <li><a href="{% url 'vocabulary' %}" {% if request.resolver_match.url_name == 'vocabulary' %}class="active"{% endif %}>Словарь</a></li>
+                <li><a href="{% url 'completed_tests' %}" {% if request.resolver_match.url_name == 'completed_tests' %}class="active"{% endif %}>Тесты</a></li>
+                <li><a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}class="active"{% endif %}>Профиль</a></li>
+                <li><a href="{% url 'logout' %}" class="logout">Выйти</a></li>
+            </ul>
+            {% endif %}
+        </div>
+    </nav>
+    
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <footer>
+        <p>© 2026 DictionaryPro. Система интервального повторения для изучения иностранных слов.</p>
+    </footer>
+    
+    <script>
+        // Автоматическое скрытие сообщений через 5 секунд
+        setTimeout(function() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(function(message) {
+                message.style.opacity = '0';
+                message.style.transition = 'opacity 0.5s';
+                setTimeout(function() {
+                    message.remove();
+                }, 500);
+            });
+        }, 5000);
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

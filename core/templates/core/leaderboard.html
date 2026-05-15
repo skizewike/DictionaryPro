@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="leaderboard-container">
+    <h1>🏆 Таблица лидеров</h1>
+    <p class="subtitle">Самые активные пользователи DictionaryPro</p>
+    
+    <!-- Карточка текущего пользователя -->
+    <div class="current-user-card">
+        <div class="current-user-rank">#{{ user_position }}</div>
+        <div class="current-user-info">
+            <div class="current-user-name">
+                <span class="user-avatar">{{ user.username|first|upper }}</span>
+                <span>{{ user.username }}</span>
+                {% if user_position == 1 %}
+                <span class="crown">👑</span>
+                {% endif %}
+            </div>
+            <div class="current-user-stats">
+                <div class="stat">
+                    <span class="stat-value">{{ current_user_stats.total_points }}</span>
+                    <span class="stat-label">очков</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ current_user_stats.total_correct_answers }}</span>
+                    <span class="stat-label">прав. ответов</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ current_user_stats.total_tests_passed }}</span>
+                    <span class="stat-label">тестов</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">{{ current_user_stats.avg_score }}%</span>
+                    <span class="stat-label">ср. балл</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Таблица лидеров -->
+    <div class="leaderboard-table">
+        <div class="table-header">
+            <div class="col-rank">#</div>
+            <div class="col-user">Пользователь</div>
+            <div class="col-points">Очки</div>
+            <div class="col-correct">Правильно</div>
+            <div class="col-tests">Тесты</div>
+            <div class="col-avg">Ср. балл</div>
+        </div>
+        
+        {% for stat in top_users %}
+        <div class="table-row {% if stat.user == user %}current-user-row{% endif %}">
+            <div class="col-rank">
+                {% if forloop.counter == 1 %}
+                <span class="medal gold">🥇</span>
+                {% elif forloop.counter == 2 %}
+                <span class="medal silver">🥈</span>
+                {% elif forloop.counter == 3 %}
+                <span class="medal bronze">🥉</span>
+                {% else %}
+                <span class="rank-number">{{ forloop.counter }}</span>
+                {% endif %}
+            </div>
+            <div class="col-user">
+                <div class="user-info">
+                    <span class="user-avatar-small">{{ stat.user.username|first|upper }}</span>
+                    <span>{{ stat.user.username }}</span>
+                </div>
+            </div>
+            <div class="col-points">{{ stat.total_points }}</div>
+            <div class="col-correct">{{ stat.total_correct_answers }}</div>
+            <div class="col-tests">{{ stat.total_tests_passed }}</div>
+            <div class="col-avg">
+                <div class="avg-bar">
+                    <div class="avg-fill" style="width: {{ stat.avg_score }}%"></div>
+                    <span>{{ stat.avg_score }}%</span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>Пока нет данных. Пройдите тесты, чтобы попасть в рейтинг!</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="info-text">
+        <p>📊 <strong>Как начисляются очки?</strong></p>
+        <ul>
+            <li>✅ Правильный ответ: <strong>+10 очков</strong></li>
+            <li>📝 Пройденный тест: <strong>+50 очков</strong></li>
+            <li>⭐ Средний балл: <strong>×2 очка за каждый %</strong></li>
+        </ul>
+        <p class="small">*Статистика обновляется автоматически</p>
+    </div>
+</div>
+
+<style>
+.leaderboard-container { max-width: 1000px; margin: 0 auto; }
+.leaderboard-container h1 { margin-bottom: 10px; color: #1e293b; }
+.subtitle { color: #64748b; margin-bottom: 30px; }
+
+.current-user-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 25px; margin-bottom: 30px; display: flex; align-items: center; gap: 25px; flex-wrap: wrap; color: white; }
+.current-user-rank { font-size: 2.5em; font-weight: bold; background: rgba(255,255,255,0.2); padding: 15px 25px; border-radius: 16px; }
+.current-user-info { flex: 1; }
+.current-user-name { font-size: 1.5em; font-weight: bold; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+.user-avatar { width: 50px; height: 50px; background: rgba(255,255,255,0.3); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5em; }
+.crown { font-size: 1.2em; }
+.current-user-stats { display: flex; gap: 30px; flex-wrap: wrap; }
+.current-user-stats .stat { text-align: center; }
+.current-user-stats .stat-value { font-size: 1.5em; font-weight: bold; display: block; }
+.current-user-stats .stat-label { font-size: 0.8em; opacity: 0.8; }
+
+.leaderboard-table { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px; }
+.table-header { display: grid; grid-template-columns: 70px 1fr 100px 100px 80px 120px; background: #f8fafc; padding: 15px 20px; font-weight: bold; color: #475569; border-bottom: 2px solid #e2e8f0; }
+.table-row { display: grid; grid-template-columns: 70px 1fr 100px 100px 80px 120px; padding: 12px 20px; border-bottom: 1px solid #f1f5f9; align-items: center; transition: background 0.2s; }
+.table-row:hover { background: #f8fafc; }
+.table-row.current-user-row { background: #ede9fe; border-left: 4px solid #4f46e5; }
+
+.col-rank { text-align: center; }
+.medal { font-size: 1.3em; }
+.rank-number { font-weight: bold; color: #64748b; }
+
+.user-info { display: flex; align-items: center; gap: 10px; }
+.user-avatar-small { width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9em; }
+
+.col-points, .col-correct, .col-tests { font-weight: 600; color: #1e293b; text-align: center; }
+
+.avg-bar { display: flex; align-items: center; gap: 8px; }
+.avg-bar .avg-fill { height: 8px; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 10px; width: 60px; }
+.avg-bar span { font-size: 0.85em; color: #64748b; }
+
+.info-text { background: #f8fafc; padding: 20px; border-radius: 16px; }
+.info-text ul { margin: 10px 0 0 20px; color: #64748b; }
+.info-text li { margin: 5px 0; }
+.info-text .small { font-size: 0.8em; color: #94a3b8; margin-top: 10px; }
+
+.empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+
+@media (max-width: 768px) {
+    .table-header, .table-row { grid-template-columns: 50px 1fr 70px 70px 60px 90px; font-size: 0.8em; }
+    .current-user-card { flex-direction: column; text-align: center; }
+    .current-user-stats { justify-content: center; }
+}
+</style>
+{% endblock %}

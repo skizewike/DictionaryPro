@@ -1,0 +1,39 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h1>Вход в DictionaryPro</h1>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Логин</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Войти</button>
+        </form>
+        <div class="auth-footer">
+            Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container { display: flex; justify-content: center; align-items: center; min-height: 70vh; }
+.auth-card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+.auth-card h1 { margin: 0 0 30px; text-align: center; color: #1e293b; }
+.auth-form { margin-bottom: 20px; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #475569; }
+.form-group input { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; outline: none; transition: border-color 0.2s; }
+.form-group input:focus { border-color: #4f46e5; }
+.btn-block { width: 100%; padding: 12px; font-size: 1.1em; }
+.auth-footer { text-align: center; color: #64748b; }
+.auth-footer a { color: #4f46e5; text-decoration: none; font-weight: 500; }
+.auth-footer a:hover { text-decoration: underline; }
+</style>
+{% endblock %}

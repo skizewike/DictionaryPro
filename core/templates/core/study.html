@@ -1,0 +1,275 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="study-container">
+    <h1>📚 Обучение</h1>
+    
+    {% if no_words %}
+        <div class="alert alert-warning">
+            <p>⚠️ В этом уроке пока нет слов. Добавьте их в админке.</p>
+            <a href="{% url 'study' %}" class="btn btn-primary">Выбрать другой урок</a>
+        </div>
+    
+    {% elif completed %}
+        <!-- ЭКРАН ПОЗДРАВЛЕНИЯ -->
+        <div class="completion-screen">
+            <div class="trophy">🏆</div>
+            <h2>Поздравляем!</h2>
+            <p>Вы успешно прошли урок <strong>"{{ lesson.name }}"</strong></p>
+            
+            <div class="completion-stats">
+                <div class="stat-box success">
+                    <div class="stat-value">{{ correct_count }}</div>
+                    <div class="stat-label">Правильно</div>
+                </div>
+                <div class="stat-box danger">
+                    <div class="stat-value">{{ wrong_count }}</div>
+                    <div class="stat-label">Ошибок</div>
+                </div>
+                <div class="stat-box primary">
+                    <div class="stat-value">{{ score_percent }}%</div>
+                    <div class="stat-label">Результат</div>
+                </div>
+            </div>
+            
+            {% if wrong_words %}
+            <div class="wrong-words-list">
+                <h4>Слова, в которых были ошибки:</h4>
+                <ul>
+                    {% for w in wrong_words %}
+                    <li><strong>{{ w.term }}</strong> → {{ w.translation }} (ваш ответ: "{{ w.user_answer }}")</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="completion-actions">
+                <form method="post" action="{% url 'study' %}?lesson={{ lesson.id }}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="complete">
+                    <button type="submit" class="btn btn-success btn-large">✅ Сохранить результат</button>
+                </form>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-large">🏠 На главную</a>
+                <a href="{% url 'study' %}" class="btn btn-primary btn-large">📚 Другие уроки</a>
+            </div>
+        </div>
+    
+    {% elif not lessons %}
+        <div class="alert alert-warning">
+            <p>⚠️ Уроки пока не созданы. Добавьте их в админ-панели.</p>
+        </div>
+    
+    {% elif not lesson and lessons %}
+        <!-- СПИСОК ВСЕХ УРОКОВ -->
+        <div class="lessons-grid">
+            {% for lesson_data in lessons %}
+            <div class="lesson-card">
+                <div class="lesson-header">
+                    <h3>{{ lesson_data.lesson.name }}</h3>
+                    <span class="lang-badge">{{ lesson_data.lesson.language.name }}</span>
+                </div>
+                <p class="lesson-desc">{{ lesson_data.lesson.description|default:"Нет описания" }}</p>
+                <div class="lesson-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ lesson_data.percent }}%"></div>
+                    </div>
+                    <span>{{ lesson_data.mastered }} / {{ lesson_data.total }} слов изучено</span>
+                </div>
+                <div class="lesson-actions">
+                    <a href="{% url 'study' %}?lesson={{ lesson_data.lesson.id }}" class="btn btn-primary btn-block">
+                        {% if lesson_data.percent == 100 %}🔄 Повторить{% else %}▶ Начать{% endif %}
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>Нет доступных уроков</p>
+            </div>
+            {% endfor %}
+        </div>
+    
+    {% elif show_start %}
+        <!-- ЭКРАН СТАРТА УРОКА (когда урок выбран, но не начат) -->
+        <div class="start-screen">
+            <div class="lesson-info-card">
+                <div class="lesson-header">
+                    <span class="lang-badge">{{ lesson.language.name }}</span>
+                    <span class="words-count">📖 {{ total_words }} слов</span>
+                </div>
+                <h2>{{ lesson.name }}</h2>
+                <p class="lesson-description">{{ lesson.description|default:"Нет описания" }}</p>
+                
+                <div class="progress-info-preview">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <p>Выучите все слова урока, чтобы получить сертификат!</p>
+                </div>
+                
+                <form method="post" action="?lesson={{ lesson.id }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="start">
+                    <button type="submit" class="btn btn-primary btn-large">
+                        🚀 Начать урок ({{ total_words }} слов)
+                    </button>
+                </form>
+            </div>
+        </div>
+    
+    {% else %}
+        <!-- ПРОЦЕСС ОБУЧЕНИЯ -->
+        <div class="study-session">
+            <div class="session-header">
+                <div class="lesson-title">
+                    <h2>{{ lesson.name }}</h2>
+                    <span class="lang-badge">{{ lesson.language.name }}</span>
+                </div>
+                <div class="session-stats">
+                    <span class="stat correct">✓ {{ correct_count }}</span>
+                    <span class="stat incorrect">✗ {{ wrong_count }}</span>
+                </div>
+            </div>
+            
+            <div class="progress-info">
+                <div class="progress-text">
+                    <span>Прогресс урока</span>
+                    <span>{{ current_index }} / {{ total_in_session }}</span>
+                </div>
+                <div class="progress-bar large">
+                    <div class="progress-fill" style="width: {{ progress_percent }}%"></div>
+                </div>
+            </div>
+            
+            <form method="post" class="study-card" id="studyForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="answer">
+                <input type="hidden" name="word_id" value="{{ current_word.id }}">
+                
+                <div class="word-prompt">
+                    <div class="prompt-label">
+                        <span class="hint-text">📝 Введите перевод</span>
+                    </div>
+                    <div class="prompt-word">{{ prompt_text }}</div>
+                </div>
+                
+                <div class="answer-section">
+                    <input 
+                        type="text" 
+                        name="answer" 
+                        class="answer-input" 
+                        placeholder="{{ answer_label }}"
+                        autocomplete="off"
+                        autofocus
+                        required
+                        id="answerInput"
+                    >
+                    <button type="submit" class="btn-check">
+                        ✓ Проверить
+                    </button>
+                </div>
+                
+                <p class="hint">💡 Нажмите Enter для проверки ответа</p>
+            </form>
+            
+            <div class="session-footer">
+                <a href="{% url 'study' %}" class="btn btn-secondary">← Отмена и выбор урока</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.study-container { max-width: 900px; margin: 0 auto; }
+.study-container h1 { margin-bottom: 30px; color: #1e293b; }
+
+.alert { padding: 20px; border-radius: 12px; margin: 20px 0; text-align: center; }
+.alert-warning { background: #fef3c7; border-left: 4px solid #f59e0b; color: #92400e; }
+
+/* Сетка уроков */
+.lessons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-top: 20px; }
+.lesson-card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #4f46e5; transition: transform 0.2s, box-shadow 0.2s; }
+.lesson-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+.lesson-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+.lesson-header h3 { margin: 0; color: #1e293b; font-size: 1.2em; }
+.lang-badge { background: #e0e7ff; color: #4f46e5; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 600; }
+.lesson-desc { color: #64748b; margin: 12px 0; line-height: 1.5; }
+.lesson-progress { margin: 15px 0; }
+.progress-bar { height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin: 8px 0; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #4f46e5, #7c3aed); border-radius: 10px; transition: width 0.3s; }
+.lesson-progress span { font-size: 0.85em; color: #64748b; }
+.lesson-actions { margin-top: 15px; }
+.btn-block { width: 100%; text-align: center; padding: 10px; }
+.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; padding: 10px 20px; cursor: pointer; text-decoration: none; display: inline-block; transition: transform 0.2s; }
+.btn-primary:hover { transform: translateY(-2px); }
+.btn-secondary { background: #e2e8f0; color: #475569; padding: 10px 24px; border-radius: 10px; text-decoration: none; display: inline-block; transition: background 0.2s; }
+.btn-secondary:hover { background: #cbd5e1; }
+
+/* Экран старта */
+.start-screen { margin-top: 20px; }
+.lesson-info-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+.lesson-info-card .lesson-header { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; justify-content: center; }
+.words-count { background: #f1f5f9; color: #475569; padding: 6px 14px; border-radius: 20px; font-size: 0.85em; }
+.lesson-info-card h2 { margin: 15px 0; color: #1e293b; }
+.lesson-description { color: #64748b; margin-bottom: 30px; line-height: 1.6; }
+.btn-large { padding: 14px 40px; font-size: 1.1em; }
+
+/* Экран завершения */
+.completion-screen { text-align: center; padding: 40px 30px; background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-top: 20px; }
+.trophy { font-size: 70px; margin-bottom: 20px; animation: bounce 1s ease infinite; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.completion-screen h2 { color: #1e293b; margin: 0 0 10px; }
+.completion-stats { display: flex; justify-content: center; gap: 20px; margin: 30px 0; flex-wrap: wrap; }
+.stat-box { background: #f8fafc; padding: 15px 25px; border-radius: 16px; text-align: center; min-width: 100px; }
+.stat-box.success { background: #d1fae5; }
+.stat-box.danger { background: #fee2e2; }
+.stat-box.primary { background: #ede9fe; }
+.stat-value { font-size: 2em; font-weight: bold; }
+.wrong-words-list { background: #fef3c7; padding: 15px 20px; border-radius: 12px; margin: 20px 0; text-align: left; }
+.wrong-words-list h4 { margin: 0 0 10px; color: #92400e; }
+.wrong-words-list ul { margin: 0; padding-left: 20px; }
+.wrong-words-list li { color: #78350f; margin: 5px 0; }
+.completion-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+.btn-success { background: #10b981; color: white; }
+.btn-success:hover { background: #059669; }
+
+/* Процесс обучения */
+.study-session { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+.lesson-title { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.lesson-title h2 { margin: 0; }
+.session-stats { display: flex; gap: 15px; }
+.stat { padding: 5px 15px; border-radius: 20px; font-weight: bold; }
+.stat.correct { background: #d1fae5; color: #065f46; }
+.stat.incorrect { background: #fee2e2; color: #991b1b; }
+.progress-info { margin-bottom: 30px; }
+.progress-text { display: flex; justify-content: space-between; margin-bottom: 8px; color: #64748b; }
+.progress-bar.large { height: 12px; }
+.word-prompt { text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; color: white; margin-bottom: 30px; }
+.prompt-word { font-size: 2.2em; font-weight: bold; margin: 20px 0; word-break: break-word; }
+.answer-section { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+.answer-input { flex: 1; padding: 15px 20px; font-size: 1.1em; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; }
+.answer-input:focus { border-color: #4f46e5; }
+.btn-check { padding: 15px 30px; font-size: 1.1em; background: #10b981; color: white; border: none; border-radius: 12px; cursor: pointer; }
+.btn-check:hover { background: #059669; }
+.hint { text-align: center; color: #94a3b8; font-size: 0.9em; margin: 15px 0; }
+.session-footer { margin-top: 30px; text-align: center; }
+
+.empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+
+@media (max-width: 768px) {
+    .lessons-grid { grid-template-columns: 1fr; }
+    .prompt-word { font-size: 1.6em; }
+    .answer-section { flex-direction: column; }
+    .btn-check { width: 100%; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const answerInput = document.getElementById('answerInput');
+    if (answerInput) {
+        answerInput.focus();
+    }
+});
+</script>
+{% endblock %}

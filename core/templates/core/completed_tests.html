@@ -1,0 +1,122 @@
+<!-- core/templates/core/completed_tests.html -->
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="completed-tests-container">
+    <h1>📜 История пройденных тестов</h1>
+    
+    <div class="stats-summary">
+        <div class="summary-card">
+            <div class="summary-icon">📚</div>
+            <div class="summary-info">
+                <div class="summary-value">{{ total_tests }}</div>
+                <div class="summary-label">Всего тестов</div>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">⭐</div>
+            <div class="summary-info">
+                <div class="summary-value">{{ avg_score }}%</div>
+                <div class="summary-label">Средний результат</div>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">🏆</div>
+            <div class="summary-info">
+                <div class="summary-value">{{ best_score }}%</div>
+                <div class="summary-label">Лучший результат</div>
+            </div>
+        </div>
+    </div>
+    
+    {% if tests %}
+        <div class="tests-list">
+            {% for test in tests %}
+            <div class="test-card">
+                <div class="test-header">
+                    <div class="test-lesson-info">
+                        <h3>{{ test.lesson.name }}</h3>
+                        <span class="lang-tag">{{ test.lesson.language.name }}</span>
+                    </div>
+                    <div class="test-score {% if test.score_percent >= 80 %}score-high{% elif test.score_percent >= 60 %}score-medium{% else %}score-low{% endif %}">
+                        {{ test.score_percent }}%
+                    </div>
+                </div>
+                <div class="test-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Правильно:</span>
+                        <span class="detail-value correct">{{ test.correct_count }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Всего слов:</span>
+                        <span class="detail-value">{{ test.total_count }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Дата:</span>
+                        <span class="detail-value">{{ test.completed_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                <div class="test-actions">
+                    <a href="{% url 'repeat_lesson' test.lesson.id %}" class="btn-repeat">🔄 Повторить урок</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>Вы еще не прошли ни одного теста</p>
+            <a href="{% url 'study' %}" class="btn btn-primary">Начать обучение</a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.completed-tests-container { max-width: 900px; margin: 0 auto; }
+.completed-tests-container h1 { margin-bottom: 30px; color: #1e293b; }
+
+.stats-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+.summary-card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 20px; border-left: 4px solid #4f46e5; }
+.summary-icon { font-size: 2.5em; }
+.summary-info { flex: 1; }
+.summary-value { font-size: 2em; font-weight: bold; color: #1e293b; }
+.summary-label { color: #64748b; font-size: 0.9em; }
+
+.tests-list { display: flex; flex-direction: column; gap: 20px; }
+.test-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; }
+.test-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+
+.test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
+.test-lesson-info h3 { margin: 0 0 8px 0; color: #1e293b; }
+.lang-tag { background: #e0e7ff; color: #4f46e5; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 600; display: inline-block; }
+
+.test-score { font-size: 2em; font-weight: bold; padding: 8px 20px; border-radius: 40px; }
+.score-high { background: #d1fae5; color: #065f46; }
+.score-medium { background: #fef3c7; color: #92400e; }
+.score-low { background: #fee2e2; color: #991b1b; }
+
+.test-details { display: flex; gap: 30px; margin-bottom: 20px; flex-wrap: wrap; padding: 15px 0; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; }
+.detail-item { display: flex; gap: 8px; }
+.detail-label { color: #64748b; }
+.detail-value { font-weight: 600; color: #1e293b; }
+.detail-value.correct { color: #10b981; }
+
+.test-actions { text-align: right; }
+.btn-repeat { background: #f1f5f9; color: #4f46e5; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 500; transition: background 0.2s; display: inline-block; }
+.btn-repeat:hover { background: #e0e7ff; }
+
+.empty-state { text-align: center; padding: 60px; background: white; border-radius: 16px; }
+.empty-icon { font-size: 4em; margin-bottom: 20px; }
+.empty-state p { color: #64748b; margin-bottom: 20px; }
+
+.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border-radius: 12px; text-decoration: none; display: inline-block; transition: transform 0.2s; }
+.btn-primary:hover { transform: translateY(-2px); }
+
+@media (max-width: 768px) {
+    .test-header { flex-direction: column; align-items: flex-start; }
+    .test-details { flex-direction: column; gap: 10px; }
+    .test-actions { text-align: left; }
+    .stats-summary { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
